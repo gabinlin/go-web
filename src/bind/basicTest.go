@@ -1,14 +1,14 @@
 package main
 
 import (
-	"database/sql"
 	"fmt"
 	"go-web/src/dao"
 	"log"
 	"net/http"
 
-	"github.com/gin-gonic/gin"
+	"github.com/jmoiron/sqlx"
 
+	"github.com/gin-gonic/gin"
 	_ "github.com/go-sql-driver/mysql"
 )
 
@@ -23,19 +23,17 @@ func main() {
 			fmt.Println(err)
 			return
 		}
-		open, err := sql.Open("mysql", "root:@tcp(localhost:3306)/test")
+		connect, err := sqlx.Connect("mysql", "root:@tcp(localhost:3306)/test")
+		if err != nil {
+			log.Println(err)
+			return
+		}
 		if err != nil {
 			log.Println(err)
 			return
 		}
 
-		defer func(open *sql.DB) {
-			_ = open.Close()
-		}(open)
-		if err := open.Ping(); err != nil {
-			panic(err)
-		}
-		daoImpl := dao.EmpDaoImpl{Db: open}
+		daoImpl := dao.EmpDaoImpl{Db: connect}
 		emp = daoImpl.One(emp.Empno)
 
 		context.JSON(http.StatusOK, gin.H{

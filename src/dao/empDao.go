@@ -1,10 +1,10 @@
 package dao
 
 import (
-	"database/sql"
 	"fmt"
 	"log"
-	"time"
+
+	"github.com/jmoiron/sqlx"
 )
 
 type EmpDao interface {
@@ -15,7 +15,7 @@ type EmpDao interface {
 }
 
 type EmpDaoImpl struct {
-	Db *sql.DB
+	Db *sqlx.DB
 }
 
 func (empDaoImpl EmpDaoImpl) Insert(emp Emp) {
@@ -24,7 +24,7 @@ func (empDaoImpl EmpDaoImpl) Insert(emp Emp) {
 	exec, err := begin.Exec("INSERT INTO `emp` (`EMPNO`, `ENAME`, `JOB`, `MGR`, `HIREDATE`, `SAL`, `COMM`, `DEPTNO`) "+
 		"VALUES"+
 		"(?, ?, ?, ?, ?, ?, ?, ?);",
-		emp.Empno, emp.Ename, emp.Job, emp.Mgr, emp.HireDate.Format("2006-01-02"), emp.Sal, emp.Comm, emp.DeptNo)
+		emp.Empno, emp.Ename, emp.Job, emp.Mgr, "2006-01-02", emp.Sal, emp.Comm, emp.DeptNo)
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -40,12 +40,7 @@ func (empDaoImpl EmpDaoImpl) update(emp Emp) {
 
 func (empDaoImpl EmpDaoImpl) One(empNo int) Emp {
 	var emp Emp
-	query, err := empDaoImpl.Db.Prepare("select empno,ENAME,sal,HireDate,Comm,DeptNo from emp where empno=?")
-	if err != nil {
-		log.Println(err)
-	}
-	row := query.QueryRow(empNo)
-	err = row.Scan(&emp.Empno, &emp.Ename, &emp.Sal, &emp.HireDate, &emp.Comm, &emp.DeptNo)
+	err := empDaoImpl.Db.Get(&emp, "select * from emp where empno=?", empNo)
 	if err != nil {
 		log.Println(err)
 	}
@@ -53,12 +48,12 @@ func (empDaoImpl EmpDaoImpl) One(empNo int) Emp {
 }
 
 type Emp struct {
-	Empno    int `uri:"empno"`
-	Ename    string
-	Job      string
-	Mgr      int8
-	HireDate time.Time
-	Sal      float64
-	Comm     float64
-	DeptNo   string
+	Empno    int     `uri:"empno" db:"EMPNO"`
+	Ename    string  `db:"ENAME"`
+	Job      string  `db:"JOB"`
+	Mgr      int     `db:"MGR"`
+	HireDate string  `db:"HIREDATE"`
+	Sal      float64 `db:"SAL"`
+	Comm     float64 `db:"COMM"`
+	DeptNo   string  `db:"DEPTNO"`
 }
